@@ -1,0 +1,45 @@
+# Tiny preregistration for tests and scripts/smoke_pipeline.py.
+# Same schema and code path as configs/preregistered_v1_2_3.yaml; only sizes differ.
+# No `implementation` lock here: the fixture must survive code edits (tests build locked copies)..
+version: "1.2.2-smoke"
+frozen:
+  data: {positive_threshold: 4.0, n_users: 120, min_train_events: 8, min_test_events: 3,
+         train_frac: 0.85, val_frac: 0.05, session_gap_seconds: 1800, genome_components: 16,
+         cold_min_items: 5, clip_days: 365.0}
+  semantics: {n_clusters: 12, kmeans_seed: 0, head_fraction: 0.20, n_boot_reliability: 50, n_strata: 3}
+  model: {d: 8, R: 6, h_v: 0.45, gamma: 0.5, alpha: 1.0, eta: 0.1, n_attractors: 3, ema_beta: 0.2,
+          n_time_feats: 4, encoder_hidden: 32, potential_hidden: 32, satiation_hidden: 16,
+          satiation_enabled: true, atom_eps: 1.0e-3}
+  solver: {kind: rk4, delta_safe: 0.5, r_max: 2.0}
+  reg: {ess_min_frac: 0.25, lambda_ess: 1.0, lambda_dis: 0.1}
+  train: {epochs: 1, batch_size: 32, bptt: 16, n_negatives: 16, lr: 3.0e-3, weight_decay: 1.0e-2,
+          warmup_steps: 5, clip: 1.0, max_len: 0, ckpt_every_batches: 2}
+  eval: {ks: [10, 50], primary_metric: ndcg@10, chunk_size: 64, batch_size: 64}
+  baseline: {n_layers: 1, n_heads: 2, max_len: 16, eval_windows_per_batch: 64}
+sweep_keys: [model.M, model.h, model.sigma, seed, train.negatives, data.ordinal_time,
+             baseline.kind, baseline.dropout]
+grids:
+  M: [1, 2, 4]
+  h: [0.30, 0.50]
+  sigma: [0.25, 0.40]
+  f01_M: [1, 4]
+  seeds_tuning: [0]
+  seeds_confirmatory: [1]
+  seeds_confirmatory_primary: [1, 2]
+  negatives: [uniform, popularity]
+  negatives_primary: uniform
+  robustness_M: [1, 4]
+tuning: {selection_split: val, selection_metric: ndcg@10, test_selection_forbidden: true,
+         sigma_cost_threshold: 0.01}
+acceptance: {treat_M: 4, ctrl_M: 1, alpha: 0.05, c5_r_min: 0.30, c5_cv_max: 0.75, n_boot_iv: 50,
+             inference: two_level_t,
+             # smoke only: at d=8 the encoder starts at mean cos ~0.87 (see AMENDMENTS OPEN-1)
+             d17_max_mean_cos: 0.99}
+gates:
+  open1_required: true
+  open1: {data_n_users: 120, train_warmup_steps: 5, M: [1, 4], h: [0.30, 0.50], sigma: 0.40, seed: 0}
+baselines: {sasrec_dropout_grid: [0.1, 0.2]}
+engineering:
+  reference_hardware: "NVIDIA GeForce RTX 3090"
+  ratchet_events_per_sec: {state: 40000, rk4: 25000, train: 20000}
+  benchmark: {batch_users: 16, window: 4, n_items: 200, warmup_iters: 1, iters: 2, repeats: 2}

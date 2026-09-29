@@ -1,0 +1,12 @@
+name: h1_preview_2027
+claim_eligible: false
+
+may_override:
+  - data.n_users
+  - train.ckpt_every_batches
+
+overrides:
+  data:
+    n_users: 4000
+  train:
+    ckpt_every_batches: 20

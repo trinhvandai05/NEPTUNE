@@ -1,0 +1,15 @@
+# Not claim-eligible.  Throughput, VRAM, NaN hunting and the OPEN-1 decision.
+# It keeps the CLAIM epoch count (the OPEN-1 gate refuses a pilot that trains
+# fewer epochs than the claim runs): only the cohort size and the warmup change.
+# Its runs are stamped claim_eligible=false and the analysis refuses them.
+name: engineering_pilot
+claim_eligible: false
+may_override:
+  - data.n_users
+  - train.warmup_steps
+  - train.ckpt_every_batches
+overrides:
+  data:
+    n_users: 5000
+  train:
+    warmup_steps: 500        # ~ the claim warmup scaled by the 5x smaller cohort

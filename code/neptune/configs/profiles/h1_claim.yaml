@@ -1,0 +1,5 @@
+# Claim-eligible: may override NOTHING.  Only these runs can enter paper tables.
+name: h1_claim
+claim_eligible: true
+may_override: []
+overrides: {}

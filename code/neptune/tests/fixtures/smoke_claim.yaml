@@ -1,0 +1,4 @@
+name: smoke_claim
+claim_eligible: true
+may_override: []
+overrides: {}

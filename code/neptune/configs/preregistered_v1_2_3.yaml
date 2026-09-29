@@ -1,0 +1,183 @@
+# NEPTUNE H1-v1.2.3 -- frozen preregistration for the H1 slice.
+#
+# Every value under `frozen` is loaded verbatim into every run and cannot be
+# changed by a claim-eligible profile or by any sweep.  The SHA-256 of this file
+# namespaces every run, selection and report directory, so results produced
+# under another version can never be silently reused.
+#
+# THIS IS NOT A 1:1 IMPLEMENTATION OF THE FROZEN v1 SPEC.  The formal list of
+# amendments (including the change of the H1 estimand from Shannon diversity to
+# Simpson collision concentration) is ../AMENDMENTS.md; its SHA-256 below is
+# verified by the loader, so the log cannot be edited without re-freezing.
+#
+# v1.1 was never executed on real data.  v1.2 supersedes it (external review):
+# run namespacing by prereg hash, tuning seed excluded from acceptance,
+# seed-level inference, prune-before-evolve, ESS guard on every active event,
+# global cold-item definition, SASRec context fix, D17 gate.
+# v1.2.1 (second review, still before any real-data result): artifact provenance,
+# OPEN-1 enforced as a hard gate, one D17 threshold for gate and C6, pilot at the
+# claim epoch count, no train-history truncation, D1 matched seeds.
+# v1.2.2 (third review): canonical OPEN-1 pilot contract, pilot treated as
+# protocol-critical (strict artifacts), code locked by an implementation
+# fingerprint, fatal cohort shortfall, D17 described as what it measures.
+# v1.2.3 (fourth review): OPEN-1 verdict re-derived from evidence, decision /
+# selection / analysis code locked, data + covariate payloads hashed, selection
+# anchored to data and covariates and re-derived before confirmatory and analysis.
+# "v1.3" stays reserved for the OPEN-1 architectural amendment.
+
+version: "1.2.3"
+
+# Code lock: sha256 over src/neptune/**/*.py, scripts/*.py, pyproject.toml
+# (print it with scripts/fingerprint.py).  Claim runs, the OPEN-1 pilot and its
+# decision, the selection freezes and the analysis refuse any other code.  Editing it is a re-freeze (new prereg hash).
+implementation:
+  sha256: a7eddb3ac27bb5aeea1e8f2aa764b4a03fa5b8baa114e0603eaa135086ae0fa3
+
+amendment_log:
+  path: ../AMENDMENTS.md
+  sha256: 9431038608f094b8e8d2d6c1e4cfe3c04be4a0d3cc68233c6422c9d79f33c641
+
+frozen:
+  data:
+    positive_threshold: 4.0
+    n_users: 25000
+    min_train_events: 20
+    min_test_events: 3
+    train_frac: 0.85
+    val_frac: 0.05
+    session_gap_seconds: 1800
+    genome_components: 256
+    cold_min_items: 300
+    clip_days: 365.0
+  semantics:
+    n_clusters: 200
+    kmeans_seed: 0
+    head_fraction: 0.20
+    n_boot_reliability: 200
+    n_strata: 5
+  model:
+    d: 64
+    R: 48
+    h_v: 0.45
+    gamma: 0.5
+    alpha: 1.0
+    eta: 0.1
+    n_attractors: 8
+    ema_beta: 0.2
+    n_time_feats: 8
+    encoder_hidden: 256
+    potential_hidden: 256
+    satiation_hidden: 128
+    satiation_enabled: true
+    atom_eps: 1.0e-3
+  solver:
+    kind: rk4
+    delta_safe: 0.5
+    r_max: 2.0
+  reg:
+    ess_min_frac: 0.25
+    lambda_ess: 1.0
+    lambda_dis: 0.1
+  train:
+    epochs: 20
+    batch_size: 192          # identical across ALL arms: batch size changes optimization
+    bptt: 64
+    n_negatives: 256
+    lr: 3.0e-4
+    weight_decay: 1.0e-2
+    warmup_steps: 2000
+    clip: 1.0
+    max_len: 0               # no truncation: training sees the full train history, like lambda_hat and eval
+    ckpt_every_batches: 50
+  eval:
+    ks: [10, 50]
+    primary_metric: ndcg@10
+    chunk_size: 2048
+    batch_size: 128
+  baseline:
+    n_layers: 2
+    n_heads: 2
+    max_len: 200
+    eval_windows_per_batch: 512
+
+# The only knobs an experiment script may turn.
+sweep_keys:
+  - model.M
+  - model.h
+  - model.sigma
+  - seed
+  - train.negatives
+  - data.ordinal_time
+  - baseline.kind
+  - baseline.dropout
+
+grids:
+  M: [1, 2, 4, 8, 16, 32]
+  h: [0.20, 0.35, 0.50]
+  sigma: [0.20, 0.30, 0.45]
+  f01_M: [1, 16]
+  seeds_tuning: [0]                          # selection only; NEVER in acceptance
+  seeds_confirmatory: [1, 2]                 # every arm (D1 shape)
+  seeds_confirmatory_primary: [1, 2, 3, 4, 5]  # treat_M and ctrl_M: seed-level inference
+  negatives: [uniform, popularity]
+  negatives_primary: uniform
+  robustness_M: [1, 16]
+
+tuning:
+  selection_split: val
+  selection_metric: ndcg@10
+  test_selection_forbidden: true
+  # Escalate to per-arm (h, sigma) iff sharing sigma costs any F01 arm more than
+  # this RELATIVE loss of validation NDCG against its own best configuration.
+  sigma_cost_threshold: 0.01
+
+acceptance:
+  treat_M: 16
+  ctrl_M: 1
+  alpha: 0.05
+  # Condition 5: strata with reliability R_j >= c5_r_min are "reliable";
+  # among them, beta_j / R_j must be negative with coefficient of variation
+  # <= c5_cv_max, and the stratum-fixed-effects slope must be significantly < 0.
+  c5_r_min: 0.30
+  c5_cv_max: 0.75
+  n_boot_iv: 500
+  # Primary CIs combine user and training-seed uncertainty:
+  #   SE^2 = SE_user^2 + Var_seeds(per-seed estimate) / S,  critical value t_{S-1}.
+  # C1 additionally requires every confirmatory seed's mean Delta to be > 0.
+  inference: two_level_t
+  # ONE D17 threshold (spec D17), used by BOTH the OPEN-1 pilot gate and C6:
+  # final mean pairwise <e_i, e_j> of every pilot / analysed run must be <= this.
+  # It detects cone collapse only; effective rank, mean |cos| and cos quantiles
+  # are reported but NOT gated (gating them needs an amendment before the pilot).
+  d17_max_mean_cos: 0.60
+
+gates:
+  # No claim-eligible run may start until scripts/pilot_report.py has frozen an
+  # OPEN-1 decision KEEP_CURRENT_PREREG for this preregistration hash.
+  open1_required: true
+  # The canonical pilot.  Its config must equal the claim config for each sweep
+  # except these two values (checked key by key); epochs = frozen train.epochs.
+  open1:
+    data_n_users: 5000
+    train_warmup_steps: 500
+    M: [1, 16]
+    h: [0.20, 0.50]
+    sigma: 0.30
+    seed: 0
+
+baselines:
+  sasrec_dropout_grid: [0.1, 0.2, 0.3]     # 3 trials = same budget as each NEPTUNE arm
+
+engineering:
+  reference_hardware: "NVIDIA GeForce RTX 3090"
+  ratchet_events_per_sec:
+    state: 40000
+    rk4: 25000
+    train: 20000
+  benchmark:
+    batch_users: 192
+    window: 64
+    n_items: 15000
+    warmup_iters: 5
+    iters: 20
+    repeats: 5

@@ -1,0 +1,66 @@
+{
+  "schema": "neptune-data/1.2.3",
+  "prereg_sha256": "4f223a6dc0c3832e023885ecfbc45b2bdcde7afcfd8d436b13e8e7896acd0d4d",
+  "implementation_sha256": "a7eddb3ac27bb5aeea1e8f2aa764b4a03fa5b8baa114e0603eaa135086ae0fa3",
+  "data_cfg": {
+    "positive_threshold": 4.0,
+    "n_users": 4000,
+    "min_train_events": 20,
+    "min_test_events": 3,
+    "train_frac": 0.85,
+    "val_frac": 0.05,
+    "session_gap_seconds": 1800.0,
+    "genome_components": 256,
+    "cold_min_items": 300,
+    "ordinal_time": true,
+    "clip_days": 365.0
+  },
+  "seed": 0,
+  "n_users": 4000,
+  "n_items": 13816,
+  "d_x": 276,
+  "n_events": 1099008,
+  "split_counts": {
+    "train": 908188,
+    "val": 61475,
+    "test": 129345
+  },
+  "t_cut": 1488612473.8,
+  "t_val": 1513531820.6,
+  "attrition": {
+    "users_total": 162341,
+    "users_train_ge_min": 107781,
+    "users_test_ge_1": 4555,
+    "users_test_ge_2": 4273,
+    "users_test_ge_3": 4015,
+    "min_train_events": 20,
+    "min_test_events": 3,
+    "users_evaluable": 4015,
+    "users_excluded_by_test_rule": 103766,
+    "users_sampled": 4000
+  },
+  "features": {
+    "n_genome_items": 13816,
+    "n_tags": 1128,
+    "genome_components_effective": 256,
+    "genome_explained_variance": 0.8668375611305237,
+    "n_genres": 19,
+    "d_x": 276,
+    "title_embedding": false
+  },
+  "n_warm_items": 13143,
+  "n_cold_items": 673,
+  "n_cold_items_in_test": 662,
+  "cold_arm_usable": true,
+  "negatives_restricted_to_warm": true,
+  "files": {
+    "item_features.npy": "57414ea2aac2a5968ed647ac64f4129819e567052150eeb6d0b60d6db3cdc433",
+    "movie_ids.npy": "01a0b0bf7bc965f1c5c9b572937ccfdf97157e623331a524e548f77181120891",
+    "popularity.npy": "e772f76c955a82fe28a321f0107abf3d0134ff88028bd6d42a97b8ddd2308fb0",
+    "cold_items.npy": "22d3f7f71636aab0f523dd60be916bb513c70cbbb3646f4607eb1acd8d4d09a4",
+    "warm_items.npy": "2836ada3059152c0b0d1212815ed45074ce6311e3c5d19ceacbf455e67f0e791",
+    "user_ids.npy": "26dd0cd1e33c41c35bc0719f9b8272a79691d5b67995596f25efb535efd32513",
+    "events.parquet": "34b1f7b3a372db8bdb7d0fc60ec369c391efb4124112e5372a47ce4714ed5324"
+  },
+  "cold_definition": "first rating of any value by any user (full corpus, pre-cohort) >= T_cut"
+}

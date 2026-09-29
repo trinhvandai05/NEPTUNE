@@ -1,0 +1,5 @@
+# claim-INELIGIBLE pilot profile for the smoke pipeline (no overrides: same epochs as claim)
+name: smoke_pilot
+claim_eligible: false
+may_override: []
+overrides: {}
